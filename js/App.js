@@ -28,9 +28,6 @@ class App {
         document.querySelector("#register button")
                 .addEventListener("click", this.registerFund.bind(this));
 
-        //디버깅용 펀드 데이터
-
-
         this.popup = document.querySelector(".popup");
         document.querySelector("#btnClose")
             .addEventListener("click", this.closePopup.bind(this));
@@ -65,38 +62,101 @@ class App {
         });
 
         this.toastContainer = document.querySelector("#toastList")
-        this.nav[0].click();
+        this.loadingFundList();
+        this.loadingInvestorList();
+    }
+
+    loadingFundList() {
+        let req = new XMLHttpRequest();
+        req.open("GET", "/fundlist.php");
+        this.fundList = [];
+        req.onreadystatechange = () => {
+            if(req.readyState === XMLHttpRequest.DONE){
+                if(req.status === 200 ){
+                    let json = JSON.parse(req.responseText);
+                    json.data.forEach(x => {
+                        let fund = new Fund(x.id, x.name, x.end_date, x.total, x.current);
+                        this.fundList.push(fund);
+                    });
+                }else {
+                    this.showMsg("전송중 오류 발생");
+                }
+                this.nav[0].click();
+            }
+        }
+        req.send();
     }
 
     investFund(){
         let fundNo = document.querySelector("#investNo").value;
-        const fund = this.fundList.find(x => x.number == fundNo);
-        if(!fund) return;
-
         let money = document.querySelector("#money").value * 1;
+        
         if(money <= 0){
             this.showMsg("금액을 올바르게 입력하세요");
             return;
         }
-        let name = document.querySelector("#name").value;
-        let result = fund.invest(money);
+
         let signData = this.signCanvas.toDataURL();
-        this.showMsg(result.msg);
-        if(result.success){
-            //투자 성공시
-            this.popup.querySelector("#btnClose").click();
-            
-            //투자자 리스트에 넣어줘야 해
-            let inv = new Investor(fund, name, money, signData);            
-            this.invList.push(inv);
-            this.nav[0].click();
+
+        let req = new XMLHttpRequest();
+        req.open("POST", "/add_fund.php");
+
+        req.onreadystatechange = () => {
+            if(req.readyState === XMLHttpRequest.DONE){
+                if(req.status === 200 ){
+                    let json = JSON.parse(req.responseText);
+                    
+                    this.showMsg(json.msg);
+                    if(json.success){
+                        this.popup.querySelector("#btnClose").click();
+                        this.loadingFundList(); //펀드리스트 갱신
+                        this.loadingInvestorList(); //투자자 리스트 갱신
+                    }
+
+                }else {
+                    this.showMsg("전송 오류 발생");
+                }
+            }
+        };
+
+        let formData = new FormData();
+        formData.append("id", fundNo);
+        formData.append("money", money);
+        formData.append("sign", signData);
+
+        req.send(formData);
+    }
+    
+    loadingInvestorList (){
+        let req = new XMLHttpRequest();
+        req.open("GET", "/investor_list.php");
+        this.invList = [];
+        req.onreadystatechange = () => {
+            if(req.readyState === XMLHttpRequest.DONE){
+                if(req.status === 200 ){
+                    let json = JSON.parse(req.responseText);
+                    
+                    json.data.forEach(x => {
+                        let inv = new Investor(
+                            {number:x.fid, name:x.fname}, 
+                            x.uname, x.money, x.sign );
+                            
+                        this.invList.push(inv);
+                    });
+                }
+            }
         }
+        req.send();
     }
 
     openPopup(fund){
+        if(user == null){
+            this.showMsg("로그인 후 투자하실 수 있습니다.");
+            return;
+        }
         this.popup.querySelector("#investNo").value = fund.number;
         this.popup.querySelector("#investName").value = fund.name;
-        this.popup.querySelector("#name").value = "";
+        this.popup.querySelector("#name").value = user.name;
         this.popup.querySelector("#money").value = 0;
         this.sCtx.clearRect(0,0,this.signCanvas.width, this.signCanvas.height);
         this.popup.classList.add("active");
@@ -117,13 +177,11 @@ class App {
         e.target.classList.add("active");
 
         this.loadingMethod[target]();
-        
+
         //크기조절 코드
         let inner = document.querySelector(".inner-content");
         let h = document.querySelector("#" + target).clientHeight;
         inner.style.height = h + 'px';
-
-        
     }
 
     //펀드 등록페이지
@@ -148,11 +206,33 @@ class App {
             return;
         }
 
-        let fund = new Fund(no, name, endDate, total);
-        this.fundList.push(fund);
-        this.showMsg("등록되었습니다.");
-        this.fundCnt++;
-        this.nav[0].click();
+        let req = new XMLHttpRequest();
+        req.open("POST", "/invest_ok.php");
+
+        req.onreadystatechange = () =>{
+            if(req.readyState === XMLHttpRequest.DONE) {
+                if(req.status === 200){
+                    let json = JSON.parse(req.responseText);
+                    this.showMsg(json.msg);
+                    if(json.success ){
+                        let recvData = json.data;
+                        let fund = new Fund(recvData.id, name, endDate, total);
+                        this.fundList.push(fund);
+                        this.fundCnt++;
+                        this.nav[0].click();              
+                    }
+                }else {
+                    console.log('문제 발생');
+                }
+            }
+        }
+
+        let formData = new FormData();
+        formData.append("name", name);
+        formData.append("endDate", endDate);
+        formData.append("money", total);
+
+        req.send(formData);
     }
 
     //펀드 리스트 페이지
