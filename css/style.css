@@ -20,8 +20,8 @@ body {
 
 header {
     height:130px;
-    border-bottom:#009fe3 solid 3px;
-    background: #fff;
+    border-bottom:#fdc70f solid 3px;
+    background: #333;
 }
 
 header > .container {
@@ -45,6 +45,9 @@ header nav {
     text-align: right;
     padding: 10px;
 }
+.nav-btn span{
+    color: #fdc70f;
+}
 nav > ul {
     position: absolute;
     bottom:0;
@@ -65,7 +68,7 @@ nav > ul > li > a {
     display: flex;
     justify-content: center;
     align-items: center;
-    color:#009fe3;
+    color:#fdc70f;
     font-weight:bold;
     font-size:1.1rem;
     cursor:pointer;
@@ -73,8 +76,8 @@ nav > ul > li > a {
 }
 
 nav a.active {
-    background: #009fe3;
-    color:#fff;
+    background: #fdc70f;
+    color:#222;
 }
 
 #content {
@@ -252,7 +255,38 @@ article > h2 {
     z-index: 10;
     visibility: visible;
 }
-
+.boardView {
+    visibility: hidden;
+    display:flex;
+    position: fixed;
+    width:100%;
+    height:100%;
+    background-color: rgba(0,0,0,0.5);
+    top:0;
+    left:0;
+    justify-content: center;
+    align-items: center;
+    z-index: -10;
+    opacity: 0;
+    transition: all 0.5s;
+}
+.boardView>.inner{
+    display: block;
+}
+.boardView .bv-container{
+    height: 80%;
+}
+.boardView .bv-container>*{
+    margin: 10px 0;
+}
+.boardView>.buttons{
+    
+}
+.boardView.active {
+    opacity: 1;
+    z-index: 10;
+    visibility: visible;
+}
 .inner {
     width:70%;
     height:500px;
@@ -276,26 +310,29 @@ article > h2 {
     height:100px;
 }
 
-.inv-list {
+.board-list {
     display:grid;
     width:80%;
     grid-template-columns: 1fr;
     grid-auto-rows:60px;
-    grid-gap:10px;
+    
 }
 
-.investor {
+.board {
     display: grid;
     padding:8px 12px;
     background-color: #fff;
-    grid-template-columns: repeat(5, 1fr);
-    border-radius: 0.2rem;
+    grid-template-columns: repeat(4, 1fr);
     box-shadow: 1px 1px 2px 2px rgba(0,0,0,0.2);
 }
 
-.investor > span {
+.board > span {
     display:flex;
     align-items: center;
+}
+#board .btn{
+    margin: 20px 0;
+    
 }
 
 #toastList {
@@ -319,6 +356,7 @@ article > h2 {
     margin-bottom:10px;
     transition:all 0.5s;
     color:#fff;
+    z-index: 999;
 }
 
 .toast > .close {

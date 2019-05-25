@@ -1,7 +1,7 @@
 <?php
     require("db.php");
 
-    $sql = 'SELECT * from chessroom';
+    $sql = 'SELECT * from board';
 
     $list = fetchAll($con, $sql);
 

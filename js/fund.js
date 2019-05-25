@@ -1,20 +1,11 @@
 class Fund {
-    constructor(number, name, endDate, total, current = 0){
+    constructor(number, title, tier, total, current = 0){
         this.number = number;
-        this.name = name;
-        this.endDate = endDate;
+        this.title = title;
+        this.tier = tier;
         this.total = total * 1;
         this.current = current * 1;
         this.canvas = null;
-    }
-    invest(money){
-        if(this.current + money > this.total){
-            return {success:false, msg:"투자 금액이 전체 금액을 초과합니다."};
-        }else{
-            this.current += money;
-            return{success:true, msg:"투자되었습니다. 감사합니다."};
-        }
-
     }
 
     drawCircle(){
@@ -51,7 +42,7 @@ class Fund {
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillStyle = "#000";
-        ctx.fillText(p + "%", x, y);
+        ctx.fillText(this.current + "/" + this.total, x, y);
     }
 
     getTemplate(){
@@ -62,15 +53,14 @@ class Fund {
                 <canvas></canvas>
             </div>
             <div class="info">
-                <h4>${this.number}</h4>
-                <p class="name">${this.name}</p>
-                <p class="end-date">${this.endDate}</p>
+                <h4>${this.title}</h4>
+                <p class="name">${this.tier}</p>
                 <p class="data-set">
                     <span class="current">${this.current.toLocaleString()}</span> /
                     <span class="total">${this.total.toLocaleString()}</span>
                 </p>
                 <div class="button-row">
-                    <button class="btn btn-blue btn-sm">투자하기</button>
+                    <button class="btn btn-blue btn-sm">참가</button>
                 </div>
             </div>`;
         this.canvas = div.querySelector("canvas");

@@ -13,6 +13,4 @@ if($cnt == 0){
     echo "회원가입 실패";
 }else{
     msgAndGO("회원가입이 성공했습니다.","/index.php");
-    
-        
 }

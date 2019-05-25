@@ -3,12 +3,13 @@ class App {
     constructor(){
         //펀드 리스트
         this.fundList = [];
+        this.boardList = [];
         this.fundCnt = 1; //현재 펀드번호
         this.nav = document.querySelectorAll("nav > ul a");
         this.nav.forEach(x => {
             x.addEventListener("click", this.changeMenu.bind(this));
-        });
-
+        });     
+        
         //투자자 리스트
         this.invList = [];
 
@@ -17,53 +18,28 @@ class App {
         this.loadingMethod = {
             "list": this.loadingList.bind(this),
             "register": this.loadingRegister.bind(this),
-            "investor": this.loadingInvestor.bind(this)
+            "board": this.loadingBoardList.bind(this)
         }
 
         //투자자들을 담는 공간
-        this.invContainer = document.querySelector(".inv-list");
         //펀드들을 담는 공간
         this.fundContainer = document.querySelector(".fund-list");
+        this.boardContainer = document.querySelector(".board-list");
+        
 
         document.querySelector("#register button")
                 .addEventListener("click", this.registerFund.bind(this));
-
+        document.querySelector("#board button").addEventListener("click", this.openPopup.bind(this));
         this.popup = document.querySelector(".popup");
         document.querySelector("#btnClose")
             .addEventListener("click", this.closePopup.bind(this));
-        document.querySelector("#btnInvest")
-            .addEventListener("click", this.investFund.bind(this));
-
-        this.signCanvas = document.querySelector("#sign");
-        this.signCanvas.width = this.signCanvas.clientWidth;
-        this.signCanvas.height = this.signCanvas.clientHeight;
-        this.sCtx = this.signCanvas.getContext("2d");
-
+        
         this.beforePoint = {x:0, y:0};
         this.startDraw = false;
-        //싸인창에 마우스 클릭시
-        this.signCanvas.addEventListener("mousedown", (e)=>{
-            this.startDraw = true;
-            this.beforePoint.x = e.offsetX;
-            this.beforePoint.y = e.offsetY;
-        });
-        this.signCanvas.addEventListener("mouseup", (e)=>{
-            this.startDraw = false;
-        });
-
-        this.signCanvas.addEventListener("mousemove", (e) => {
-            if(!this.startDraw) return;
-            this.sCtx.beginPath();
-            this.sCtx.moveTo(this.beforePoint.x, this.beforePoint.y);
-            this.sCtx.lineTo(e.offsetX, e.offsetY);
-            this.sCtx.stroke();
-            this.beforePoint.x = e.offsetX;
-            this.beforePoint.y = e.offsetY;
-        });
-
+        
         this.toastContainer = document.querySelector("#toastList")
         this.loadingFundList();
-        this.loadingInvestorList();
+        this.getBoardList();
     }
 
     loadingFundList() {
@@ -75,8 +51,9 @@ class App {
                 if(req.status === 200 ){
                     console.log(req.responseText);
                     let json = JSON.parse(req.responseText);
+                    console.log(json.data);
                     json.data.forEach(x => {
-                        let fund = new Fund(x.id, x.name, x.end_date, x.total * 1, x.current * 1);
+                        let fund = new Fund(x.id, x.title, x.tier, 8, x.current * 1);
                         this.fundList.push(fund);
                     });
                 }else {
@@ -87,31 +64,90 @@ class App {
         }
         req.send();
     }
-
-    investFund(){
-        let fundNo = document.querySelector("#investNo").value;
-        let money = document.querySelector("#money").value * 1;
-        
-        if(money <= 0){
-            this.showMsg("금액을 올바르게 입력하세요");
-            return;
-        }
-
-        let signData = this.signCanvas.toDataURL();
-
+    getBoardList() {
         let req = new XMLHttpRequest();
-        req.open("POST", "/add_fund.php");
-
+        req.open("GET", "/getBoardList.php");
+        this.boardList = [];
         req.onreadystatechange = () => {
             if(req.readyState === XMLHttpRequest.DONE){
                 if(req.status === 200 ){
                     let json = JSON.parse(req.responseText);
+                    console.log(json.data);
+                    json.data.forEach(x => {
+                        let board = new Board(x.id, x.title, x.content, x.writer);
+                        this.boardList.push(board);
+                    });
+                }else {
+                    this.showMsg("전송중 오류 발생");
+                }
+                
+            }
+        }
+        
+        req.send();
+    }
+   
+    // investFund(){
+    //     let fundNo = document.querySelector("#investNo").value;
+    //     let money = document.querySelector("#money").value * 1;
+        
+    //     if(money <= 0){
+    //         this.showMsg("금액을 올바르게 입력하세요");
+    //         return;
+    //     }
+
+    //     let signData = this.signCanvas.toDataURL();
+
+    //     let req = new XMLHttpRequest();
+    //     req.open("POST", "/add_fund.php");
+
+    //     req.onreadystatechange = () => {
+    //         if(req.readyState === XMLHttpRequest.DONE){
+    //             if(req.status === 200 ){
+    //                 let json = JSON.parse(req.responseText);
                     
-                    this.showMsg(json.msg);
+    //                 this.showMsg(json.msg);
+    //                 if(json.success){
+    //                     this.popup.querySelector("#btnClose").click();
+    //                     this.loadingFundList(); //펀드리스트 갱신
+    //                     this.loadingInvestorList(); //투자자 리스트 갱신
+    //                 }
+
+    //             }else {
+    //                 this.showMsg("전송 오류 발생");
+    //             }
+    //         }
+    //     };
+
+    //     let formData = new FormData();
+    //     formData.append("id", fundNo);
+    //     formData.append("money", money);
+    //     formData.append("sign", signData);
+
+    //     req.send(formData);
+    // }
+    insertBoard(){
+        let boardTitle = document.querySelector("#boardTitle").value;
+        let boardContent = document.querySelector("#boardContent").value;
+        let boardWriter = document.querySelector("#boardWriter").value;
+
+        if(boardContent == "" || boardTitle == "" || boardWriter ==""){
+            this.showMsg("값이 누락되어 있습니다.");
+            return;
+        }
+
+        let req = new XMLHttpRequest();
+        req.open("POST", "/add_board.php");
+
+        req.onreadystatechange = () => {
+            if(req.readyState === XMLHttpRequest.DONE){
+                if(req.status === 200 ){
+                    console.log(req.responseText);
+                    let json = JSON.parse(req.responseText);
+                    
+                    
                     if(json.success){
-                        this.popup.querySelector("#btnClose").click();
-                        this.loadingFundList(); //펀드리스트 갱신
-                        this.loadingInvestorList(); //투자자 리스트 갱신
+                        $(".popup #btnClose").click();
                     }
 
                 }else {
@@ -121,45 +157,22 @@ class App {
         };
 
         let formData = new FormData();
-        formData.append("id", fundNo);
-        formData.append("money", money);
-        formData.append("sign", signData);
+        formData.append("title", boardTitle);
+        formData.append("content", boardContent);
+        formData.append("writer", boardWriter);
 
         req.send(formData);
     }
     
-    loadingInvestorList (){
-        let req = new XMLHttpRequest();
-        req.open("GET", "/investor_list.php");
-        this.invList = [];
-        req.onreadystatechange = () => {
-            if(req.readyState === XMLHttpRequest.DONE){
-                if(req.status === 200 ){
-                    let json = JSON.parse(req.responseText);
-                    
-                    json.data.forEach(x => {
-                        let inv = new Investor(
-                            {number:x.fid, name:x.fname}, 
-                            x.uname, x.money, x.sign );
-                            
-                        this.invList.push(inv);
-                    });
-                }
-            }
-        }
-        req.send();
-    }
 
-    openPopup(fund){
+    openPopup(){
         if(user == null){
             this.showMsg("로그인 후 투자하실 수 있습니다.");
             return;
         }
-        this.popup.querySelector("#investNo").value = fund.number;
-        this.popup.querySelector("#investName").value = fund.name;
-        this.popup.querySelector("#name").value = user.name;
-        this.popup.querySelector("#money").value = 0;
-        this.sCtx.clearRect(0,0,this.signCanvas.width, this.signCanvas.height);
+        
+        this.popup.querySelector("#boardWriter").value = user.name;
+        this.popup.querySelector("#btnBoard").addEventListener("click", this.insertBoard.bind());
         this.popup.classList.add("active");
     }
 
@@ -176,7 +189,7 @@ class App {
         
         this.nav.forEach(x => x.classList.remove("active"));
         e.target.classList.add("active");
-
+        
         this.loadingMethod[target]();
 
         //크기조절 코드
@@ -187,22 +200,20 @@ class App {
 
     //펀드 등록페이지
     loadingRegister(){
-        let no = "00000" + this.fundCnt;
-        no = no.substring(no.length - 5);
+     
 
-        document.querySelector("#fundNo").value = no;
-        document.querySelector("#fundName").value = "";
-        document.querySelector("#endDate").value = "";
-        document.querySelector("#total").value = "";
+        //document.querySelector("#fundNo").value = no;
+        
     }
 
     //펀드 등록하는 로직
     registerFund(){
-        let no = document.querySelector("#fundNo").value;
-        let name = document.querySelector("#fundName").value;
-        let endDate = document.querySelector("#endDate").value;
-        let total = document.querySelector("#total").value;
-        if(name == "" || endDate == "" || total == ""){
+        let title = document.querySelector("#title").value;
+        let tier = $("#tier option:selected").val();
+        console.log(tier);
+        let total = 8;
+        if(title == "" || tier == ""){
+            console.log("a");
             this.showMsg("값이 누락되어 있습니다.");
             return;
         }
@@ -213,12 +224,14 @@ class App {
         req.onreadystatechange = () =>{
             if(req.readyState === XMLHttpRequest.DONE) {
                 if(req.status === 200){
+                    console.log(req.responseText);
                     let json = JSON.parse(req.responseText);
                     this.showMsg(json.msg);
                     if(json.success ){
                         let recvData = json.data;
-                        let fund = new Fund(recvData.id, name, endDate, total);
-                        this.fundList.push(fund);
+                        //let fund = new Fund(recvData.id, name, endDate, total);
+                        let chessroom = new Fund(recvData.id, title, tier, total);
+                        this.fundList.push(chessroom);
                         this.fundCnt++;
                         this.nav[0].click();              
                     }
@@ -226,12 +239,13 @@ class App {
                     console.log('문제 발생');
                 }
             }
+            
         }
 
         let formData = new FormData();
-        formData.append("name", name);
-        formData.append("endDate", endDate);
-        formData.append("money", total);
+        formData.append("title", title);
+        formData.append("tier", tier);
+        
 
         req.send(formData);
     }
@@ -249,7 +263,12 @@ class App {
             x.drawCircle();
         });
     }
-
+    loadingBoardList(){
+        this.boardContainer.innerHTML = "";
+        this.boardList.forEach(x => {
+            this.boardContainer.appendChild(x.getTemplate());
+        });
+    }
     //투자자 보는 페이지
     loadingInvestor(){
         this.invContainer.innerHTML = "";
