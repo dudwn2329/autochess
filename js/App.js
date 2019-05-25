@@ -73,9 +73,10 @@ class App {
         req.onreadystatechange = () => {
             if(req.readyState === XMLHttpRequest.DONE){
                 if(req.status === 200 ){
+                    console.log(req.responseText);
                     let json = JSON.parse(req.responseText);
                     json.data.forEach(x => {
-                        let fund = new Fund(x.id, x.name, x.end_date, x.total, x.current);
+                        let fund = new Fund(x.id, x.name, x.end_date, x.total * 1, x.current * 1);
                         this.fundList.push(fund);
                     });
                 }else {
